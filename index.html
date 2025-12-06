@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebLLM Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="header-info">
+                <h1>WebLLM Chat</h1>
+                <!-- Dropdown removed -->
+                <div id="model-info" class="model-info"></div>
+                <span class="status-indicator" id="status-indicator">Initializing...</span>
+            </div>
+            <div id="progress-container" class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+                <span id="progress-text">0%</span>
+            </div>
+        </header>
+
+        <div class="messages-container" id="messages-container">
+            <!-- Messages will be inserted here -->
+            <div class="message bot-message">
+                <div class="message-content">
+                    Hello! Please select a model from the dropdown above to start chatting locally in your browser.
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <form id="chat-form">
+                <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" disabled>
+                <button type="submit" id="send-btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
