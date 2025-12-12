@@ -79,7 +79,7 @@ function updateModelInfo(modelId) {
 
 async function tryLoadEngineFromSource(modelId, source, initProgressCallback) {
     if (!webllm) {
-        webllm = await import("https://esm.run/@mlc-ai/web-llm");
+        webllm = await import("./web-llm.js");
     }
 
     // If baseUrl is null, use default configuration
@@ -102,24 +102,11 @@ async function tryLoadEngineFromSource(modelId, source, initProgressCallback) {
         modelPath = new URL(`${source.baseUrl}${localId}/`, window.location.href).href;
 
         // Use a distinct ID for local loading to prevent conflict with prebuilt registry
-        // which might force Hugging Face paths (resolve/main)
         targetModelId = `${modelId}-Local`;
 
-        // Try to get the default model_lib for this model ID to use the remote WASM
-        try {
-            const defaultConfig = webllm.prebuiltAppConfig;
-            const defaultModel = defaultConfig.model_list.find(m => m.model_id === modelId);
-            if (defaultModel) {
-                modelLib = defaultModel.model_lib;
-                console.log(`Using remote WASM for local model: ${modelLib}`);
-            } else {
-                modelLib = new URL(`${source.baseUrl}${localId}/${localId}-ctx4k_cs1k-webgpu.wasm`, window.location.href).href;
-            }
-
-        } catch (e) {
-            console.warn("Could not fetch prebuiltAppConfig, falling back to local WASM path", e);
-            modelLib = new URL(`${source.baseUrl}${localId}/${localId}-ctx4k_cs1k-webgpu.wasm`, window.location.href).href;
-        }
+        // Force use of local WASM file
+        console.log("Using local WASM file for offline capability.");
+        modelLib = new URL(`${source.baseUrl}${localId}/${localId}-ctx4k_cs1k-webgpu.wasm`, window.location.href).href;
     }
 
     const appConfig = {
