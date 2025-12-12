@@ -1,14 +1,14 @@
 ---
 library_name: mlc-llm
-base_model: Qwen/Qwen2.5-0.5B-Instruct
+base_model: Qwen/Qwen2.5-1.5B-Instruct
 tags:
 - mlc-llm
 - web-llm
 ---
 
-# Qwen2.5-0.5B-Instruct-q4f32_1-MLC
+# Qwen2.5-1.5B-Instruct-q4f16_1-MLC
 
-This is the [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) model in MLC format `q4f32_1`.
+This is the [Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) model in MLC format `q4f16_1`.
 The model can be used for projects [MLC-LLM](https://github.com/mlc-ai/mlc-llm) and [WebLLM](https://github.com/mlc-ai/web-llm).
 
 ## Example Usage
@@ -20,14 +20,14 @@ Before running the examples, please install MLC LLM by following the [installati
 
 In command line, run
 ```bash
-mlc_llm chat HF://mlc-ai/Qwen2.5-0.5B-Instruct-q4f32_1-MLC
+mlc_llm chat HF://mlc-ai/Qwen2.5-1.5B-Instruct-q4f16_1-MLC
 ```
 
 ### REST Server
 
 In command line, run
 ```bash
-mlc_llm serve HF://mlc-ai/Qwen2.5-0.5B-Instruct-q4f32_1-MLC
+mlc_llm serve HF://mlc-ai/Qwen2.5-1.5B-Instruct-q4f16_1-MLC
 ```
 
 ### Python API
@@ -36,7 +36,7 @@ mlc_llm serve HF://mlc-ai/Qwen2.5-0.5B-Instruct-q4f32_1-MLC
 from mlc_llm import MLCEngine
 
 # Create engine
-model = "HF://mlc-ai/Qwen2.5-0.5B-Instruct-q4f32_1-MLC"
+model = "HF://mlc-ai/Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
 engine = MLCEngine(model)
 
 # Run chat completion in OpenAI API.
