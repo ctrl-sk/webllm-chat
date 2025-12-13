@@ -226,22 +226,25 @@ function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-function createDownloadButton(filename, content) {
-    const blob = new Blob([content], { type: 'text/plain' });
+async function createDownloadButton(filename, content) {
+    // Convert markdown content to Docx blob
+    const doc = markdownToDocx(content);
+    const blob = await docx.Packer.toBlob(doc);
     const url = window.URL.createObjectURL(blob);
 
     const button = document.createElement('a');
     button.href = url;
-    button.download = filename;
-    button.className = 'download-btn'; // We'll need to style this if not already
-    button.textContent = '📄 Download Detailed Brief';
+    // Ensure filename ends with .docx
+    button.download = filename.replace(/\.(txt|md)$/, "") + ".docx";
+    button.className = 'download-btn';
+    button.textContent = '📄 Download detailed brief (Word)';
     button.style.display = 'inline-block';
-    button.style.backgroundColor = '#4CAF50';
+    button.style.backgroundColor = '#cf4500';
     button.style.color = 'white';
     button.style.padding = '10px 20px';
     button.style.textAlign = 'center';
     button.style.textDecoration = 'none';
-    button.style.borderRadius = '5px';
+    button.style.borderRadius = '9999px';
     button.style.marginTop = '10px';
     button.style.cursor = 'pointer';
 
@@ -250,6 +253,86 @@ function createDownloadButton(filename, content) {
     messageDiv.appendChild(button);
     messagesContainer.appendChild(messageDiv);
     scrollToBottom();
+}
+
+function markdownToDocx(markdownText) {
+    const lines = markdownText.split('\n');
+    const children = [];
+
+    for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+
+        if (line.startsWith('# ')) {
+            // Heading 1
+            children.push(new docx.Paragraph({
+                text: line.substring(2),
+                heading: docx.HeadingLevel.HEADING_1,
+                spacing: { before: 200, after: 100 }
+            }));
+        } else if (line.startsWith('## ')) {
+            // Heading 2
+            children.push(new docx.Paragraph({
+                text: line.substring(3),
+                heading: docx.HeadingLevel.HEADING_2,
+                spacing: { before: 200, after: 100 }
+            }));
+        } else if (line.startsWith('### ')) {
+            // Heading 3
+            children.push(new docx.Paragraph({
+                text: line.substring(4),
+                heading: docx.HeadingLevel.HEADING_3,
+                spacing: { before: 100, after: 50 }
+            }));
+        } else if (line.startsWith('- ') || line.startsWith('* ')) {
+            // Bullet list
+            // Handle bold text in list items (**text**)
+            const textParts = parseBoldText(line.substring(2));
+            children.push(new docx.Paragraph({
+                children: textParts,
+                bullet: { level: 0 }
+            }));
+        } else {
+            // Normal paragraph
+            const textParts = parseBoldText(line);
+            children.push(new docx.Paragraph({
+                children: textParts,
+                spacing: { after: 100 }
+            }));
+        }
+    }
+
+    return new docx.Document({
+        sections: [{
+            properties: {},
+            children: children
+        }]
+    });
+}
+
+function parseBoldText(text) {
+    const parts = [];
+    const regex = /\*\*(.*?)\*\*/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        // Text before the bold part
+        if (match.index > lastIndex) {
+            parts.push(new docx.TextRun(text.substring(lastIndex, match.index)));
+        }
+        // The bold part
+        parts.push(new docx.TextRun({
+            text: match[1],
+            bold: true
+        }));
+        lastIndex = regex.lastIndex;
+    }
+    // Remaining text
+    if (lastIndex < text.length) {
+        parts.push(new docx.TextRun(text.substring(lastIndex)));
+    }
+    return parts;
 }
 
 // AI Logic Steps
@@ -269,7 +352,7 @@ async function determineCategory(text) {
     const response = await engine.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
         stream: false,
-        temperature: 0.4
+        temperature: 0.2
     });
 
     const category = response.choices[0].message.content.trim().toLowerCase();
@@ -288,24 +371,30 @@ async function determineCategory(text) {
 async function checkAnswerSufficiency(question, answer) {
     const wordCount = answer.trim().split(/\s+/).length;
     let contextNote = "";
-    if (wordCount < 3) {
-        contextNote = "\n    [SYSTEM NOTE: The user's answer is very short (less than 3 words). Unless it is a precise number or standard term, it is likely INSUFFICIENT. Be critical.]";
+    if (wordCount < 2) {
+        contextNote = "\n    [SYSTEM NOTE: The user's answer is very short (less than 2 words). Unless it is a precise number or standard term, it is likely INSUFFICIENT. Be critical.]";
     }
 
     const prompt = `
-    You are a strict, detail-oriented Creative Director. You do NOT accept vague requirements.
+    You are a collaborative Creative Director helper. Your goal is to ensure the user provides enough detail to start a creative brief, but you make sure you do not accept vague requirements.
+
     Question asked: "${question}"
     User answer: "${answer}"${contextNote}
 
-    Is this answer detailed enough for a production team to start working WITHOUT asking any more questions?
+    Is this answer detailed enough to be a good STARTING POINT?
     
     CRITERIA for "VALID_ANSWER":
-    - Contains specific details (dimensions, colors, durations, formats, etc.).
-    - Is NOT just a feeling (e.g., "cool", "nice", "professional" are INVALID without explanation).
-    - Is NOT just "yes/no" unless the question was a yes/no question.
+    - It provides at least one specific detail relevant to the question.
+    - It is not complete nonsense or a refusal to answer.
+    - If it's a partial answer, return a specific content-related follow-up question to key details.
     
-    If it meets strict criteria, return "VALID_ANSWER".
-    If it fails, return a polite follow-up question asking for the missing specific details. You MUST include suggestions.
+    If it is a reasonable start, return "VALID_ANSWER".
+    If it is completely insufficient (e.g. less than 2 words, or "I don't know", or unrelated), return a specific content-related follow-up question to key details.
+    
+    IMPORTANT OUTPUT RULES:
+    - Do NOT include labels like "Follow-up question:" or "Invalid answer:".
+    - Just output the follow-up question text directly if needed.
+    - If valid, just output "VALID_ANSWER".
     `;
 
     // console.log("Checking sufficiency for:", answer); 
@@ -313,7 +402,7 @@ async function checkAnswerSufficiency(question, answer) {
     const response = await engine.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
         stream: false,
-        temperature: 0.1 // Lowered to 0.1 for maximum adherence to instructions
+        temperature: 0.1 // Keep it low for stability
     });
 
     const result = response.choices[0].message.content.trim();
@@ -337,7 +426,8 @@ async function generateDetailedBrief(answers, category) {
     
     INSTRUCTIONS:
     1. Structure the brief with clear headers (Objective, Audience, Specs, etc.).
-    2. For each section, use your expertise to EXPAND and ELABORATE on the user's short answers. 
+    2. For each section, you MUST use your expertise to EXPAND and ELABORATE on the user's answers. 
+       For example:
        - If they said "blue", expand to "Primary Color Palette: Blue, suggesting trust and professionalism..."
        - If they said "fast", expand to "Pacing/Timing: Fast-paced editing style to maintain high energy..."
     3. Make it sound like a formal agency document.
