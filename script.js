@@ -222,6 +222,27 @@ function appendMessage(role, text) {
     return contentDiv;
 }
 
+function appendLoadingIndicator() {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot-message';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.style.backgroundColor = 'transparent'; // Optional: remove background if bubble has one by default
+    contentDiv.style.padding = '0'; // Optional: remove padding for image
+
+    const img = document.createElement('img');
+    img.src = 'images/Ripple_Clarifying.gif';
+    img.style.width = '100px';
+    img.alt = 'Thinking...';
+
+    contentDiv.appendChild(img);
+    messageDiv.appendChild(contentDiv);
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+    return contentDiv;
+}
+
 function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
@@ -477,7 +498,8 @@ chatForm.addEventListener('submit', async (e) => {
     try {
         if (chatState === STATE.IDLE) {
             // Intent Classification
-            const botMessageContent = appendMessage('bot', 'Thinking...');
+            // Intent Classification
+            const botMessageContent = appendLoadingIndicator();
             const category = await determineCategory(text);
             // Remove the temporary "Thinking..." message or update it
             if (botMessageContent && botMessageContent.parentElement) {
