@@ -497,8 +497,6 @@ chatForm.addEventListener('submit', async (e) => {
 
     try {
         if (chatState === STATE.IDLE) {
-            // Intent Classification
-            // Intent Classification
             const botMessageContent = appendLoadingIndicator();
             const category = await determineCategory(text);
             // Remove the temporary "Thinking..." message or update it
@@ -524,7 +522,7 @@ chatForm.addEventListener('submit', async (e) => {
             const currentQ = window.QUESTION_FLOWS[currentCategory][currentQuestionIndex];
 
             // Temporary helper message
-            const thinkingMsg = appendMessage('bot', 'Analyzing your answer...');
+            const thinkingMsg = appendLoadingIndicator();
             const analysis = await checkAnswerSufficiency(currentQ, text);
             if (thinkingMsg && thinkingMsg.parentElement) {
                 messagesContainer.removeChild(thinkingMsg.parentElement);
